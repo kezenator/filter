@@ -1,3 +1,6 @@
+pub mod netlist;
+pub mod eqn;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
