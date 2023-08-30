@@ -9,9 +9,9 @@ impl Graph
 {
     pub fn new() -> Self
     {
-        let width = 500;
-        let height = 500;
-        let svg = format!(r#"<svg version="1.1" width="{}" height="{}" xmlns="http://www.w3.org/2000/svg">"#,
+        let width = 1500;
+        let height = 800;
+        let svg = format!(r#"<svg version="1.1" width="{}" height="{}" xmlns="http://www.w3.org/2000/svg"><path d="M0 400 L 1500 400" stroke="black"/>"#,
             width, height);
 
         Graph { width, height, svg }

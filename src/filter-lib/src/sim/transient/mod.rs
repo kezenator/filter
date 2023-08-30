@@ -6,6 +6,7 @@ pub struct TransientSimulation
 {
     system: System,
     equations: Vec<Equation>,
+    time: Scalar
 }
 
 impl TransientSimulation
@@ -69,19 +70,52 @@ impl TransientSimulation
         }
 
         let system = builder.build();
+        let time = 0.0;
 
-        TransientSimulation{ system, equations }
+        TransientSimulation{ system, equations, time }
     }
 
-    pub fn solve(&self) -> Option<BTreeMap<String, Scalar>>
+    pub fn simulate(&mut self, delta_t: Scalar, steps: usize) -> BTreeMap<String, Vec<Scalar>>
     {
-        let mut solver = self.system.new_solver();
-        for (i, eq) in self.equations.iter().enumerate()
+        let mut results = vec![vec![0.0;steps];self.system.dim()];
+
+        for step in 0..steps
         {
-            eq.fill(&mut solver, EquationIndex::from_index(i));
+            let time = (step as Scalar) * delta_t + self.time;
+
+            let mut solver = self.system.new_solver();
+            for (i, eq) in self.equations.iter().enumerate()
+            {
+                eq.fill(&mut solver, EquationIndex::from_index(i), time);
+            }
+
+            match solver.solve()
+            {
+                Some(solution) =>
+                {
+                    for (var_index, var_solution) in solution.iter().enumerate()
+                    {
+                        results[var_index][step] = *var_solution;
+                    }
+                },
+                None =>
+                {
+                    println!("Solution failed at time={}", time);
+                    let mut solver = self.system.new_solver();
+                    for (i, eq) in self.equations.iter().enumerate()
+                    {
+                        eq.fill(&mut solver, EquationIndex::from_index(i), time);
+                    }
+                    self.system.print(&solver);
+                    panic!();
+                },
+            }
         }
-        self.system.print(&solver);
-        self.system.to_named_vars(solver.solve())
+        self.time += (steps as Scalar) * delta_t;
+
+        results.into_iter().enumerate()
+            .map(|(var_index, var_results)| (self.system.variables()[var_index].clone(), var_results))
+            .collect()
     }
 }
 
@@ -95,7 +129,7 @@ pub enum Equation
 
 impl Equation
 {
-    pub fn fill(&self, solver: &mut Solver, eq: EquationIndex)
+    pub fn fill(&self, solver: &mut Solver, eq: EquationIndex, time: Scalar)
     {
         match self
         {
@@ -117,7 +151,7 @@ impl Equation
                 // V+ - V- = voltage
                 *solver.coef(eq, *plus) = 1.0;
                 *solver.coef(eq, *minus) = -1.0;
-                *solver.constant(eq) = *voltage;
+                *solver.constant(eq) = *voltage + (time * 0.5 * std::f64::consts::FRAC_1_PI * 440.0).sin();
             },
             Equation::Conductance { conductance, plus, minus, current } =>
             {

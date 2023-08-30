@@ -26,7 +26,17 @@ impl System
         Solver::new(self.variables_in_order.len())
     }
 
-    pub fn to_named_vars(&self, solution: Option<Vec<f64>>) -> Option<BTreeMap<String, f64>>
+    pub fn dim(&self) -> usize
+    {
+        self.variables_in_order.len()
+    }
+
+    pub fn variables(&self) -> &Vec<String>
+    {
+        &self.variables_in_order
+    }
+
+    pub fn solution_to_named_vars(&self, solution: Option<Vec<f64>>) -> Option<BTreeMap<String, f64>>
     {
         match solution
         {
