@@ -14,6 +14,14 @@ impl EquationIndex
     }
 }
 
+impl VariableIndex
+{
+    pub fn into_index(&self) -> usize
+    {
+        self.0
+    }
+}
+
 pub struct System
 {
     variables_in_order: Vec<String>,

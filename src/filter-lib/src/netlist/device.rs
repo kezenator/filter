@@ -8,6 +8,7 @@ pub enum Device
 {
     Voltage{name: String, plus: NodeName, minus: NodeName, voltage: Value},
     Resitor{name: String, plus: NodeName, minus: NodeName, resistance: Value},
+    Capacitor{name: String, plus: NodeName, minus: NodeName, capacitance: Value},
 }
 
 impl Device
@@ -18,6 +19,7 @@ impl Device
         {
             Self::Voltage { name, ..} => name,
             Self::Resitor { name, ..} => name,
+            Self::Capacitor { name, ..} => name,
         }
     }
 
@@ -28,6 +30,8 @@ impl Device
             Self::Voltage { plus, minus, .. }
                 => vec![plus.clone(), minus.clone()],
             Self::Resitor { plus, minus, .. }
+                => vec![minus.clone(), plus.clone()],
+            Self::Capacitor { plus, minus, .. }
                 => vec![minus.clone(), plus.clone()],
         }
     }
@@ -66,6 +70,11 @@ impl FromStr for Device
                 {
                     name, plus, minus,
                     resistance: val
+                }),
+            'C' => Ok(Device::Capacitor
+                {
+                    name, plus, minus,
+                    capacitance: val
                 }),
             _ => Err("Unknown device type".into()),
         }

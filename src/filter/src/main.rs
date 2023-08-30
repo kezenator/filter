@@ -9,7 +9,7 @@ const NETLIST_FILE: &str = r#"
 V1 1 GND 1
 R1 1 2 1000
 R2 2 GND 1000
-R3 2 GND 500"#;
+C3 2 GND 0.00005"#;
 
 fn main() -> Result<(), NetlistParseError>
 {

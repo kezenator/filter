@@ -66,6 +66,15 @@ impl TransientSimulation
                     let conductance = 1.0 / resistance.value();
                     equations.push(Equation::Conductance { current, plus, minus, conductance });
                 },
+                Device::Capacitor { name, plus, minus, capacitance } =>
+                {
+                    let current = builder.find_var(&format!("I_{}", name));
+                    let plus = builder.find_var(&format!("V_{}", plus.name()));
+                    let minus = builder.find_var(&format!("V_{}", minus.name()));
+                    let capacitance = capacitance.value();
+                    let voltage = 0.0;
+                    equations.push(Equation::Capacitor { current, plus, minus, capacitance, voltage });
+                },
             }
         }
 
@@ -93,6 +102,11 @@ impl TransientSimulation
             {
                 Some(solution) =>
                 {
+                    for eq in self.equations.iter_mut()
+                    {
+                        eq.update(&solution, delta_t);
+                    }
+
                     for (var_index, var_solution) in solution.iter().enumerate()
                     {
                         results[var_index][step] = *var_solution;
@@ -125,6 +139,7 @@ pub enum Equation
     NodeCurrents{currents: Vec<(VariableIndex, Scalar)>},
     Voltage{voltage: Scalar, plus: VariableIndex, minus: VariableIndex},
     Conductance{conductance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex},
+    Capacitor{capacitance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex, voltage: Scalar},
 }
 
 impl Equation
@@ -164,6 +179,29 @@ impl Equation
                 *solver.coef(eq, *minus) = *conductance;
                 *solver.coef(eq, *plus) = -conductance;
             },
+            Equation::Capacitor { plus, minus, voltage, .. } =>
+            {
+                // Same as a voltage source
+                // Stored voltage is updated when the new current is found
+
+                *solver.coef(eq, *plus) = 1.0;
+                *solver.coef(eq, *minus) = -1.0;
+                *solver.constant(eq) = *voltage;
+            },
+        }
+    }
+
+    pub fn update(&mut self, solution: &Vec<Scalar>, delta_t: Scalar)
+    {
+        match self
+        {
+            Equation::Capacitor { capacitance, voltage, current, .. } =>
+            {
+                // I = C . dV/dt
+                // => dV = I * dt / C
+                *voltage += solution[current.into_index()] * delta_t / *capacitance;
+            },
+            _ => (),
         }
     }
 }
