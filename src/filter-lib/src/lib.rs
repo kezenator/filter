@@ -1,5 +1,7 @@
+pub mod graph;
+pub mod la;
 pub mod netlist;
-pub mod eqn;
+pub mod sim;
 
 pub fn add(left: usize, right: usize) -> usize {
     left + right

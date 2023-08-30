@@ -2,7 +2,6 @@ use std::fmt::*;
 use std::str::FromStr;
 use super::{NodeName, Value};
 use super::parser::{LineParser, NetlistParseError};
-use super::IVCurve;
 
 #[derive(Debug, Clone)]
 pub enum Device
@@ -29,25 +28,16 @@ impl Device
             Self::Voltage { plus, minus, .. }
                 => vec![plus.clone(), minus.clone()],
             Self::Resitor { plus, minus, .. }
-                => vec![plus.clone(), minus.clone()],
+                => vec![minus.clone(), plus.clone()],
         }
     }
 
-    pub fn direction_into_node(&self, node: &NodeName) -> Option<f64>
+    pub fn flow_into_node(&self, node: &NodeName) -> Option<f64>
     {
         let nodes = self.nodes();
-        if *node == nodes[0] { return Some(-1.0); }
-        if *node == nodes[1] { return Some(1.0); }
+        if *node == nodes[0] { return Some(1.0); }
+        if *node == nodes[1] { return Some(-1.0); }
         None
-    }
-
-    pub fn get_ivcurve(&self) -> IVCurve
-    {
-        match self
-        {
-            Self::Voltage { voltage, ..} => IVCurve::FixedVoltage(voltage.value()),
-            Self::Resitor { resistance, ..} => IVCurve::Resistance(resistance.value()),
-        }
     }
 }
 

@@ -1,8 +1,7 @@
 use std::str::FromStr;
 use std::collections::HashSet;
-use crate::eqn::{EquationBuilder, LinearSystem};
 
-use super::{Device, NetlistParseError, IVCurve};
+use super::{Device, NetlistParseError, NodeName};
 
 #[derive(Debug, Clone)]
 pub struct Netlist
@@ -12,78 +11,16 @@ pub struct Netlist
 
 impl Netlist
 {
-    pub fn get_equations(&self) -> LinearSystem<String, f64>
+    pub fn nodes(&self) -> HashSet<NodeName>
     {
-        let mut result = LinearSystem::<String, f64>::new();
+        self.devices.iter()
+            .flat_map(|d| d.nodes())
+            .collect::<HashSet<_>>()
+    }
 
-        // Reference GND to zero volts
-
-        {
-            let mut b1 = EquationBuilder::<String, f64>::new();
-            b1.add_variable("V_GND".to_owned(), 1.0);
-            result.add_equation(b1);
-        }
-
-        // Sum of currents into each node is zero
-
-        {
-            let nodes = self.devices.iter()
-                .flat_map(|d| d.nodes())
-                .collect::<HashSet<_>>();
-
-            for node in nodes.into_iter()
-            {
-                if (node.name() != "GND")
-                {
-                    let mut builder = EquationBuilder::<String, f64>::new();
-
-                    for dev in self.devices.iter()
-                    {
-                        if let Some(factor) = dev.direction_into_node(&node)
-                        {
-                            let var = format!("I_{}", dev.name());
-                            builder.add_variable(var, factor);
-                        }
-                    }
-
-                    result.add_equation(builder);
-                }
-            }
-        }
-
-        // Calculate voltages across each component
-
-        for dev in self.devices.iter()
-        {
-            let mut builder = EquationBuilder::<String, f64>::new();
-
-            match dev.get_ivcurve()
-            {
-                IVCurve::FixedVoltage(voltage) =>
-                {
-                    // V(+) - V(-) = voltage
-                    let nodes = dev.nodes();
-                    builder.add_variable(format!("V_{}", nodes[0]), 1.0);
-                    builder.add_variable(format!("V_{}", nodes[1]), -1.0);
-                    builder.add_constant(voltage);
-                },
-                IVCurve::Resistance(resistance) =>
-                {
-                    // V=IR
-                    // => I=V/R
-                    // => I = (V+ - V-) / R
-                    // => I -1/R * V+ + 1/R + V- = 0
-                    let nodes = dev.nodes();
-                    builder.add_variable(format!("I_{}", dev.name()), 1.0);
-                    builder.add_variable(format!("V_{}", nodes[0]), -1.0 / resistance);
-                    builder.add_variable(format!("V_{}", nodes[1]), 1.0 / resistance);
-                },
-            }
-
-            result.add_equation(builder);
-        }
-        
-        result
+    pub fn devices(&self) -> &Vec<Device>
+    {
+        &self.devices
     }
 }
 
