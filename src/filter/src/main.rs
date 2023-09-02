@@ -30,7 +30,7 @@ fn main() -> Result<(), NetlistParseError>
 
     for var in ["V_1", "V_2"]
     {
-        graph.add_trace(results.get(var).unwrap(), 2.0);
+        graph.add_trace(results.get(var).unwrap(), 2.0, var, "V");
     }
 
     let svg = graph.to_svg();
