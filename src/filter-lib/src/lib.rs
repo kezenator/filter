@@ -1,3 +1,4 @@
+pub mod exp;
 pub mod graph;
 pub mod la;
 pub mod netlist;

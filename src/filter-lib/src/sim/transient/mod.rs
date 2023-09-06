@@ -58,7 +58,7 @@ impl TransientSimulation
                     let voltage = voltage.value();
                     equations.push(Equation::Voltage { voltage, plus, minus });
                 },
-                Device::Resitor { name, plus, minus, resistance } =>
+                Device::Resistor { name, plus, minus, resistance } =>
                 {
                     let current = builder.find_var(&format!("I_{}", name));
                     let plus = builder.find_var(&format!("V_{}", plus.name()));

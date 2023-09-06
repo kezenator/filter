@@ -9,5 +9,5 @@ pub type Scalar = f64;
 pub use device::Device;
 pub use netlist::Netlist;
 pub use nodename::NodeName;
-pub use parser::NetlistParseError;
+pub use parser::ParseError;
 pub use value::Value;

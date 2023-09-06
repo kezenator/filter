@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
-use filter_lib::{netlist::{Netlist, NetlistParseError}, sim::transient::TransientSimulation};
+use filter_lib::{netlist::{Netlist, ParseError}, sim::transient::TransientSimulation};
 
 const NETLIST_FILE: &str = r#"
 V1 1 GND 1
@@ -11,7 +11,7 @@ R1 1 2 1000
 R2 2 GND 1000
 C3 2 GND 0.00005"#;
 
-fn main() -> Result<(), NetlistParseError>
+fn main() -> Result<(), ParseError>
 {
     let netlist = NETLIST_FILE.parse::<Netlist>()?;
 
