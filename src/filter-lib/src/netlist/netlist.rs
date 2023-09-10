@@ -71,6 +71,11 @@ impl FromStr for Netlist
                             let (plus, minus, capacitance) = parse_two_terminal(&mut parser, &mut device_names, &mut node_names)?;
                             devices.push(Device::Capacitor { name, plus, minus, capacitance });
                         },
+                        'D' =>
+                        {
+                            let (plus, minus) = parse_two_terminal_basic(&mut parser, &mut device_names, &mut node_names)?;
+                            devices.push(Device::Diode { name, plus, minus });
+                        },
                         'R' =>
                         {
                             let (plus, minus, resistance) = parse_two_terminal(&mut parser, &mut device_names, &mut node_names)?;
@@ -83,7 +88,7 @@ impl FromStr for Netlist
                         },
                         _ =>
                         {
-                            return Err(line_location.into_error_named("Unknown device type".to_owned()));
+                            return Err(line_location.into_error_named(format!("Unknown device type '{}'", char)));
                         },
                     }
 
@@ -111,6 +116,14 @@ impl FromStr for Netlist
 
         Ok(Netlist{ devices })
     }
+}
+
+fn parse_two_terminal_basic(parser: &mut Parser, device_names: &mut HashSet<String>, node_names: &mut HashSet<String>) -> Result<(NodeName, NodeName), ParseError>
+{
+    let plus = parse_node(parser, device_names, node_names)?;
+    let minus = parse_node(parser, device_names, node_names)?;
+
+    Ok((plus, minus))
 }
 
 fn parse_two_terminal(parser: &mut Parser, device_names: &mut HashSet<String>, node_names: &mut HashSet<String>) -> Result<(NodeName, NodeName, Value), ParseError>

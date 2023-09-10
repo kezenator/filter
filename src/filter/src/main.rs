@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
@@ -6,10 +5,12 @@ use std::time::Instant;
 use filter_lib::{netlist::{Netlist, ParseError}, sim::transient::TransientSimulation};
 
 const NETLIST_FILE: &str = r#"
-V1 1 GND sin(1000+10000*t)+5*t
+V1 1 GND 4*sin(1000+10000*t)+30*t
 R1 1 2 1000
-R2 2 GND 1000
-C3 2 GND 0.00005"#;
+R2 2 GND 100000
+C3 2 GND 0.000005
+D1 2 GND
+D2 GND 2"#;
 
 fn main() -> Result<(), ParseError>
 {
@@ -30,7 +31,7 @@ fn main() -> Result<(), ParseError>
 
     for var in ["V_1", "V_2"]
     {
-        graph.add_trace(results.get(var).unwrap(), 2.0, var, "V");
+        graph.add_trace(results.get(var).unwrap(), 5.0, var, "V");
     }
 
     let svg = graph.to_svg();

@@ -2,6 +2,10 @@ use std::collections::BTreeMap;
 use crate::netlist::{Device, Exp, Netlist, Scalar};
 use crate::la::{Builder, EquationIndex, Solver, System, VariableIndex};
 
+const DIODE_MIN_CONDUCTANCE: Scalar = 1.0 / 100_000_000.0;
+const DIODE_IS: Scalar = 1e-12;
+const DIODE_1_ON_N_VT: Scalar = 1.0 / 1.5 / 0.025852;
+
 pub struct TransientSimulation
 {
     system: System,
@@ -75,6 +79,15 @@ impl TransientSimulation
                     let voltage = 0.0;
                     equations.push(Equation::Capacitor { current, plus, minus, capacitance, voltage });
                 },
+                Device::Diode { name, plus, minus} =>
+                {
+                    let current_var = builder.find_var(&format!("I_{}", name));
+                    let plus_voltage_var = builder.find_var(&format!("V_{}", plus.name()));
+                    let minus_voltage_var = builder.find_var(&format!("V_{}", minus.name()));
+                    let conductance = DIODE_MIN_CONDUCTANCE;
+                    let offset_voltage = 0.0;
+                    equations.push(Equation::Diode { conductance, offset_voltage, plus_voltage_var, minus_voltage_var, current_var });
+                },
             }
         }
 
@@ -140,6 +153,7 @@ pub enum Equation
     Voltage{voltage: Exp, plus: VariableIndex, minus: VariableIndex},
     Conductance{conductance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex},
     Capacitor{capacitance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex, voltage: Scalar},
+    Diode{conductance: Scalar, offset_voltage: Scalar, plus_voltage_var: VariableIndex, minus_voltage_var: VariableIndex, current_var: VariableIndex},
 }
 
 impl Equation
@@ -188,6 +202,16 @@ impl Equation
                 *solver.coef(eq, *minus) = -1.0;
                 *solver.constant(eq) = *voltage;
             },
+            Equation::Diode { conductance, offset_voltage, plus_voltage_var, minus_voltage_var, current_var } =>
+            {
+                // Diode is modelled as an offset voltage, then a resistor
+                // V+ - V- - Voff = I.R
+                // I - V+.C + V-.C = Voff.C
+                *solver.coef(eq, *current_var) = 1.0;
+                *solver.coef(eq, *plus_voltage_var) = -conductance;
+                *solver.coef(eq, *minus_voltage_var) = *conductance;
+                *solver.constant(eq) = offset_voltage * conductance;
+            },
         }
     }
 
@@ -200,6 +224,52 @@ impl Equation
                 // I = C . dV/dt
                 // => dV = I * dt / C
                 *voltage += solution[current.into_index()] * delta_t / *capacitance;
+            },
+            Equation::Diode { conductance, offset_voltage, plus_voltage_var, minus_voltage_var, .. } =>
+            {
+                // First, work out the final voltage across the diode
+                let new_voltage = solution[plus_voltage_var.into_index()] - solution[minus_voltage_var.into_index()];
+
+                // Work out the new voltage offset and conductance
+                if new_voltage <= 0.0
+                {
+                    // Negative biased:
+                    // Just model as a very large resistor
+                    // to simulate some leakage current
+
+                    *conductance = DIODE_MIN_CONDUCTANCE;
+                    *offset_voltage = 0.0;
+                }
+                else
+                {
+                    // Positive biased:
+                    // Model the Shockley Diode Equation
+                    // piecewise - as a voltage offset + resistor
+
+                    // First: Solve the Schokley Diode Equation
+                    // to find the current operating point
+                    // Id = Is * (exp(Vd/n.Vt) - 1)
+
+                    let id = DIODE_IS * ((new_voltage * DIODE_1_ON_N_VT).exp() - 1.0);
+
+                    // Now - dI/dV will be the resistance
+                    // as the current operating point
+                    // dI/dV = Is * exp(Vd/n.Vt) / n.Vt
+
+                    let didv = (DIODE_IS * DIODE_1_ON_N_VT) * (new_voltage * DIODE_1_ON_N_VT).exp();
+
+                    // Now - solve for the new offset voltage
+                    // and new conductanc
+                    //
+                    // C = dI/dV;
+                    //
+                    // dI/dV = I/V => Vr = I / (dI/dV)
+                    // Voff = Vd - Vr
+                    //      = Vd - (I / dI/dV)
+
+                    *conductance = didv;
+                    *offset_voltage = new_voltage - (id / didv);
+                }
             },
             _ => (),
         }
