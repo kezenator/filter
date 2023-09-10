@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use crate::netlist::{Device, Exp, Netlist, Scalar};
+use crate::netlist::{Device, Exp, Netlist, NodeName, Scalar};
 use crate::la::{Builder, EquationIndex, Solver, System, VariableIndex};
 
 const DIODE_MIN_CONDUCTANCE: Scalar = 1.0 / 100_000_000.0;
@@ -17,6 +17,7 @@ impl TransientSimulation
 {
     pub fn new(netlist: &Netlist) -> Self
     {
+        let gnd = NodeName::gnd();
         let mut builder = Builder::new();
         let mut equations = Vec::new();
 
@@ -24,7 +25,7 @@ impl TransientSimulation
 
         {
             let _ = builder.new_equation();
-            let gnd = builder.find_var("V_GND");
+            let gnd = builder.find_var(&format!("V_{}", gnd.name()));
             equations.push(Equation::GndRef { gnd });
         }
 
@@ -34,7 +35,7 @@ impl TransientSimulation
 
         for node in netlist.nodes()
         {
-            if node.name() != "GND"
+            if node != gnd
             {
                 let mut currents = Vec::new();
                 for device in netlist.devices()
@@ -88,7 +89,7 @@ impl TransientSimulation
                     let offset_voltage = 0.0;
                     equations.push(Equation::Diode { conductance, offset_voltage, plus_voltage_var, minus_voltage_var, current_var });
                 },
-                Device::Vcvs { name, plus, minus, control_plus, control_minus, gain } =>
+                Device::Vcvs { plus, minus, control_plus, control_minus, gain, .. } =>
                 {
                     let plus_voltage_var = builder.find_var(&format!("V_{}", plus.name()));
                     let minus_voltage_var = builder.find_var(&format!("V_{}", minus.name()));

@@ -37,7 +37,7 @@ impl Exp
             {
                 if symbol == '+'
                 {
-                    parser.expect_symbol(symbol);
+                    parser.expect_symbol(symbol)?;
                     terms.push(Exp::parse_term(parser)?);
                     continue;
                 }
@@ -68,7 +68,7 @@ impl Exp
             {
                 if symbol == '*'
                 {
-                    parser.expect_symbol(symbol);
+                    parser.expect_symbol(symbol)?;
                     factors.push(Exp::parse_factor(parser)?);
                     continue;
                 }

@@ -5,16 +5,16 @@ use std::time::Instant;
 use filter_lib::{netlist::{Netlist, ParseError}, sim::transient::TransientSimulation};
 
 const NETLIST_FILE: &str = r#"
-V1 1 GND 4*sin(1000+10000*t)+30*t
+V1 1 0 4*sin(1000+10000*t)+30*t
 R1 1 2 1000
-R2 2 GND 100000
-C3 2 GND 0.000005
-D1 2 GND
-D2 GND 2
+R2 2 0 100000
+C3 2 0 0.000005
+D1 2 0
+D2 0 2
 Rd 2 3 10000000
-E1 4 GND 2 3 1000000
+E1 4 0 2 3 1000000
 Rg1 4 3 3000
-Rg2 3 GND 1000"#;
+Rg2 3 0 1000"#;
 
 fn main() -> Result<(), ParseError>
 {

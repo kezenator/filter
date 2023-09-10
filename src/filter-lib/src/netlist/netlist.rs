@@ -3,8 +3,6 @@ use std::collections::HashSet;
 use super::{Device, Exp, ParseError, NodeName, Value};
 use super::parser::{Parser, Token, TokenKind};
 
-pub const GND_NAME: &str = "GND";
-
 #[derive(Debug, Clone)]
 pub struct Netlist
 {
@@ -37,6 +35,7 @@ impl FromStr for Netlist
         let mut devices = Vec::new();
         let mut device_names = HashSet::new();
         let mut node_names = HashSet::new();
+        let gnd_node_name = NodeName::gnd();
 
         while parser.more_lines()
         {
@@ -114,14 +113,14 @@ impl FromStr for Netlist
 
         // Final checks
 
-        if (devices.is_empty())
+        if devices.is_empty()
         {
             return Err(start_location.into_error_named("Must contain at least one device".to_owned()));
         }
 
-        if !node_names.contains(GND_NAME)
+        if !node_names.contains(gnd_node_name.name())
         {
-            return Err(start_location.into_error_named("Must contain a GND node".to_owned()));
+            return Err(start_location.into_error_named(format!("Must contain reference node \"{}\"", gnd_node_name)));
         }
 
         Ok(Netlist{ devices })
@@ -160,11 +159,6 @@ fn parse_node(parser: &mut Parser, device_names: &mut HashSet<String>, node_name
 
     let name = match parser.peek().clone()
     {
-        Token::Ident(ident) =>
-        {
-            parser.expect(TokenKind::Ident)?;
-            ident
-        },
         Token::Integer(int) =>
         {
             parser.expect(TokenKind::Integer)?;

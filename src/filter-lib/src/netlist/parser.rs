@@ -51,6 +51,21 @@ pub struct ParseLocation
 
 impl ParseLocation
 {
+    pub fn line_num(&self) -> usize
+    {
+        self.line_num
+    }
+
+    pub fn column(&self) -> usize
+    {
+        self.column
+    }
+
+    pub fn line<'a>(&'a self) -> &'a str
+    {
+        &self.line
+    }
+
     pub fn into_error(self, condition: ParseErrorCondition) -> ParseError
     {
         ParseError
@@ -65,11 +80,20 @@ impl ParseLocation
     }
 }
 
-#[derive(Debug)]
 pub struct ParseError
 {
     condition: ParseErrorCondition,
     location: ParseLocation,
+}
+
+impl std::fmt::Debug for ParseError
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+    {
+        writeln!(f, "error: netlist:{}: {:?}", self.location.line_num(), self.condition)?;
+        writeln!(f, "{}", self.location.line())?;
+        writeln!(f, "{}^", " ".repeat(self.location.column()))
+    }
 }
 
 pub struct Parser
@@ -181,7 +205,7 @@ impl Parser
     fn advance(&mut self)
     {
         self.cur_token += 1;
-        if (self.cur_token >= self.cur_line_tokens.len())
+        if self.cur_token >= self.cur_line_tokens.len()
         {
             self.cur_token = 0;
             self.cur_line += 1;

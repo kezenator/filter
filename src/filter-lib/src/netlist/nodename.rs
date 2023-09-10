@@ -8,6 +8,11 @@ pub struct NodeName
 
 impl NodeName
 {
+    pub fn gnd() -> Self
+    {
+        Self::new("0".to_owned())
+    }
+
     pub fn new(name: String) -> NodeName
     {
         NodeName { name }
