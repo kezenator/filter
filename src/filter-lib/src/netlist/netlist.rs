@@ -1,6 +1,6 @@
 use std::str::FromStr;
 use std::collections::HashSet;
-use super::{Device, ParseError, NodeName, Value};
+use super::{Device, Exp, ParseError, NodeName, Value};
 use super::parser::{Parser, Token, TokenKind};
 
 pub const GND_NAME: &str = "GND";
@@ -78,7 +78,7 @@ impl FromStr for Netlist
                         },
                         'V' =>
                         {
-                            let (plus, minus, voltage) = parse_two_terminal(&mut parser, &mut device_names, &mut node_names)?;
+                            let (plus, minus, voltage) = parse_two_terminal_exp(&mut parser, &mut device_names, &mut node_names)?;
                             devices.push(Device::Voltage { name, plus, minus, voltage });
                         },
                         _ =>
@@ -120,6 +120,15 @@ fn parse_two_terminal(parser: &mut Parser, device_names: &mut HashSet<String>, n
     let value = Value::new(parser.expect_value()?);
 
     Ok((plus, minus, value))
+}
+
+fn parse_two_terminal_exp(parser: &mut Parser, device_names: &mut HashSet<String>, node_names: &mut HashSet<String>) -> Result<(NodeName, NodeName, Exp), ParseError>
+{
+    let plus = parse_node(parser, device_names, node_names)?;
+    let minus = parse_node(parser, device_names, node_names)?;
+    let exp = Exp::parse(parser)?;
+
+    Ok((plus, minus, exp))
 }
 
 fn parse_node(parser: &mut Parser, device_names: &mut HashSet<String>, node_names: &mut HashSet<String>) -> Result<NodeName, ParseError>

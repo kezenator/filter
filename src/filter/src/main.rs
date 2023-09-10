@@ -6,7 +6,7 @@ use std::time::Instant;
 use filter_lib::{netlist::{Netlist, ParseError}, sim::transient::TransientSimulation};
 
 const NETLIST_FILE: &str = r#"
-V1 1 GND 1
+V1 1 GND sin(1000+10000*t)+5*t
 R1 1 2 1000
 R2 2 GND 1000
 C3 2 GND 0.00005"#;

@@ -151,6 +151,23 @@ impl Parser
         }
     }
 
+    pub fn expect_symbol(&mut self, symbol: char) -> Result<(), ParseError>
+    {
+        match self.peek().clone()
+        {
+            Token::Symbol(actual) =>
+            {
+                if actual == symbol
+                {
+                    self.advance();
+                    return Ok(())
+                }
+            },
+            _ => (),
+        }
+        Err(self.create_error_named(format!("Expected '{}'", symbol)))
+    }
+
     pub fn cur_location(&self) -> ParseLocation
     {
         ParseLocation

@@ -1,9 +1,9 @@
-use super::{NodeName, Value};
+use super::{Exp, NodeName, Value};
 
 #[derive(Debug, Clone)]
 pub enum Device
 {
-    Voltage{name: String, plus: NodeName, minus: NodeName, voltage: Value},
+    Voltage{name: String, plus: NodeName, minus: NodeName, voltage: Exp},
     Resistor{name: String, plus: NodeName, minus: NodeName, resistance: Value},
     Capacitor{name: String, plus: NodeName, minus: NodeName, capacitance: Value},
 }

@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use crate::netlist::{Device, Netlist, Scalar};
+use crate::netlist::{Device, Exp, Netlist, Scalar};
 use crate::la::{Builder, EquationIndex, Solver, System, VariableIndex};
 
 pub struct TransientSimulation
@@ -55,7 +55,7 @@ impl TransientSimulation
                 {
                     let plus = builder.find_var(&format!("V_{}", plus.name()));
                     let minus = builder.find_var(&format!("V_{}", minus.name()));
-                    let voltage = voltage.value();
+                    let voltage = voltage.clone();
                     equations.push(Equation::Voltage { voltage, plus, minus });
                 },
                 Device::Resistor { name, plus, minus, resistance } =>
@@ -137,7 +137,7 @@ pub enum Equation
 {
     GndRef{gnd: VariableIndex},
     NodeCurrents{currents: Vec<(VariableIndex, Scalar)>},
-    Voltage{voltage: Scalar, plus: VariableIndex, minus: VariableIndex},
+    Voltage{voltage: Exp, plus: VariableIndex, minus: VariableIndex},
     Conductance{conductance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex},
     Capacitor{capacitance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex, voltage: Scalar},
 }
@@ -166,7 +166,7 @@ impl Equation
                 // V+ - V- = voltage
                 *solver.coef(eq, *plus) = 1.0;
                 *solver.coef(eq, *minus) = -1.0;
-                *solver.constant(eq) = *voltage + (time * 0.5 * std::f64::consts::FRAC_1_PI * 440.0).sin();
+                *solver.constant(eq) = voltage.calc(time);
             },
             Equation::Conductance { conductance, plus, minus, current } =>
             {
