@@ -88,6 +88,16 @@ impl TransientSimulation
                     let offset_voltage = 0.0;
                     equations.push(Equation::Diode { conductance, offset_voltage, plus_voltage_var, minus_voltage_var, current_var });
                 },
+                Device::Vcvs { name, plus, minus, control_plus, control_minus, gain } =>
+                {
+                    let plus_voltage_var = builder.find_var(&format!("V_{}", plus.name()));
+                    let minus_voltage_var = builder.find_var(&format!("V_{}", minus.name()));
+                    let control_plus_voltage_var = builder.find_var(&format!("V_{}", control_plus.name()));
+                    let control_minus_voltage_var = builder.find_var(&format!("V_{}", control_minus.name()));
+                    let gain = gain.value();
+
+                    equations.push(Equation::Vcvs{ plus_voltage_var, minus_voltage_var, control_plus_voltage_var, control_minus_voltage_var, gain});
+                },
             }
         }
 
@@ -154,6 +164,14 @@ pub enum Equation
     Conductance{conductance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex},
     Capacitor{capacitance: Scalar, plus: VariableIndex, minus: VariableIndex, current: VariableIndex, voltage: Scalar},
     Diode{conductance: Scalar, offset_voltage: Scalar, plus_voltage_var: VariableIndex, minus_voltage_var: VariableIndex, current_var: VariableIndex},
+    Vcvs
+    {
+        gain: Scalar,
+        plus_voltage_var: VariableIndex,
+        minus_voltage_var: VariableIndex,
+        control_plus_voltage_var: VariableIndex,
+        control_minus_voltage_var: VariableIndex,
+    },
 }
 
 impl Equation
@@ -212,6 +230,15 @@ impl Equation
                 *solver.coef(eq, *minus_voltage_var) = *conductance;
                 *solver.constant(eq) = offset_voltage * conductance;
             },
+            Equation::Vcvs { gain, plus_voltage_var, minus_voltage_var, control_plus_voltage_var, control_minus_voltage_var, ..} =>
+            {
+                // (V+ - V-) = G * (Vc+ - Vc-)
+                // => V+ - V- - G*Vc+ + G*Vc- = 0
+                *solver.coef(eq, *plus_voltage_var) = 1.0;
+                *solver.coef(eq, *minus_voltage_var) = -1.0;
+                *solver.coef(eq, *control_plus_voltage_var) = -gain;
+                *solver.coef(eq, *control_minus_voltage_var) = *gain;
+            }
         }
     }
 

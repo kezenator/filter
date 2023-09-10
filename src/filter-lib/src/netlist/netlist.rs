@@ -76,6 +76,16 @@ impl FromStr for Netlist
                             let (plus, minus) = parse_two_terminal_basic(&mut parser, &mut device_names, &mut node_names)?;
                             devices.push(Device::Diode { name, plus, minus });
                         },
+                        'E' =>
+                        {
+                            let plus = parse_node(&mut parser, &mut device_names, &mut node_names)?;
+                            let minus = parse_node(&mut parser, &mut device_names, &mut node_names)?;
+                            let control_plus = parse_node(&mut parser, &mut device_names, &mut node_names)?;
+                            let control_minus = parse_node(&mut parser, &mut device_names, &mut node_names)?;
+                            let gain = Value::new(parser.expect_value()?);
+
+                            devices.push(Device::Vcvs { name, plus, minus, control_plus, control_minus, gain})
+                        },
                         'R' =>
                         {
                             let (plus, minus, resistance) = parse_two_terminal(&mut parser, &mut device_names, &mut node_names)?;

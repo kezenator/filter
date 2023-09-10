@@ -65,4 +65,10 @@ impl Graph
     }
 }
 
-const COLORS: [&'static str;2] = ["darkseagreen", "coral"];
+const COLORS: [&'static str;4] =
+[
+    "darkseagreen",
+    "coral",
+    "cornflowerblue",
+    "blueviolet",
+];

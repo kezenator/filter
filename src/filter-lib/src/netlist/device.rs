@@ -7,6 +7,7 @@ pub enum Device
     Resistor{name: String, plus: NodeName, minus: NodeName, resistance: Value},
     Capacitor{name: String, plus: NodeName, minus: NodeName, capacitance: Value},
     Diode{name: String, plus: NodeName, minus: NodeName},
+    Vcvs{name: String, plus: NodeName, minus: NodeName, control_plus: NodeName, control_minus: NodeName, gain: Value},
 }
 
 impl Device
@@ -19,6 +20,7 @@ impl Device
             Self::Resistor { name, ..} => name,
             Self::Capacitor { name, ..} => name,
             Self::Diode { name, ..} => name,
+            Self::Vcvs { name, ..} => name,
         }
     }
 
@@ -28,6 +30,8 @@ impl Device
         {
             Self::Voltage { plus, minus, .. }
                 => vec![plus.clone(), minus.clone()],
+            Self::Vcvs { plus, minus, control_plus, control_minus, .. }
+                => vec![minus.clone(), plus.clone(), control_plus.clone(), control_minus.clone()],
             Self::Resistor { plus, minus, .. }
                 => vec![minus.clone(), plus.clone()],
             Self::Capacitor { plus, minus, .. }

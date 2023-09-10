@@ -10,7 +10,11 @@ R1 1 2 1000
 R2 2 GND 100000
 C3 2 GND 0.000005
 D1 2 GND
-D2 GND 2"#;
+D2 GND 2
+Rd 2 3 10000000
+E1 4 GND 2 3 1000000
+Rg1 4 3 3000
+Rg2 3 GND 1000"#;
 
 fn main() -> Result<(), ParseError>
 {
@@ -29,7 +33,7 @@ fn main() -> Result<(), ParseError>
     let duration = start.elapsed();
     println!("Solved {} steps in  {:?}", steps, duration);
 
-    for var in ["V_1", "V_2"]
+    for var in ["V_1", "V_2", "V_3", "V_4"]
     {
         graph.add_trace(results.get(var).unwrap(), 5.0, var, "V");
     }
